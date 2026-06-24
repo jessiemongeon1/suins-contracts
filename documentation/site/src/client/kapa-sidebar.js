@@ -1,13 +1,35 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// Detects Kapa sidebar open/close and toggles .kapa-sidebar-open on <html>.
-// Kapa renders in Shadow DOM so we can't query its internals.
-// Strategy: hook Kapa.open for instant open detection, then use
-// elementFromPoint to detect close (checks if right edge of screen
-// is covered by a non-docusaurus element).
+// Injects the Kapa widget script with all configuration (including
+// data-color-scheme-selector which Docusaurus strips due to nested quotes),
+// then detects sidebar open/close and toggles .kapa-sidebar-open on <html>.
 
 if (typeof window !== "undefined") {
+  // Inject the Kapa widget script tag with all attributes
+  const script = document.createElement("script");
+  script.src = "https://widget.kapa.ai/kapa-widget.bundle.js";
+  script.async = true;
+  const attrs = {
+    "data-website-id": "c34a7507-f7d9-4db2-bd58-69a670ea2b57",
+    "data-project-name": "SuiNS Knowledge",
+    "data-project-color": "#298DFF",
+    "data-button-hide": "true",
+    "data-view-mode": "sidebar",
+    "data-modal-title": "Ask SuiNS AI",
+    "data-modal-ask-ai-input-placeholder": "Ask me anything about SuiNS!",
+    "data-modal-example-questions": "How do I register a SuiNS name?,What is MVR?,How do I resolve a name on-chain?,How do I set up a subdomain?",
+    "data-modal-overlay-hidden": "true",
+    "data-modal-lock-scroll": "false",
+    "data-modal-image": "/img/logo.svg",
+    "data-color-scheme-selector": "[data-theme='dark']",
+  };
+  for (const [key, value] of Object.entries(attrs)) {
+    script.setAttribute(key, value);
+  }
+  document.head.appendChild(script);
+
+  // Sidebar open/close detection
   const OPEN_CLASS = "kapa-sidebar-open";
   let kapaOpen = false;
   let hookedRef = null;
@@ -43,12 +65,9 @@ if (typeof window !== "undefined") {
     const y = window.innerHeight / 2;
     const el = document.elementFromPoint(x, y);
     if (!el) return false;
-    // If the element at the right edge is inside #__docusaurus, sidebar is closed
     const docRoot = document.getElementById("__docusaurus");
     if (docRoot && docRoot.contains(el)) return false;
-    // If it's the body or html itself, sidebar is closed
     if (el === document.body || el === document.documentElement) return false;
-    // Otherwise something (Kapa) is covering that spot
     return true;
   }
 
